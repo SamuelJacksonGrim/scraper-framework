@@ -15,7 +15,10 @@ scraper-framework/
 ├── parse.py        # HTML parsing and result assembly
 ├── exporter.py     # JSON and CSV export
 ├── ui.py           # Terminal output with optional color via colorama
-└── main.py         # Entry point
+├── main.py         # Entry point
+├── requirements.txt
+├── .gitignore
+└── LICENSE
 ```
 
 ---
