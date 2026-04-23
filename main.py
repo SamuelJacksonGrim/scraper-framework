@@ -1,7 +1,7 @@
 # main.py
 import logging
 
-from config import BASE_URL, SEARCH_QUERY, LOG_FILE
+from config import TARGET_URL, LOG_FILE
 from fetch import fetch_page
 from parse import parse_results
 from exporter import export_json, export_csv
@@ -19,14 +19,14 @@ def setup_logging() -> None:
     )
 
 
-def run():
+def run(query: str) -> None:
     setup_logging()
-    logging.info("Starting scraper for query: %s", SEARCH_QUERY)
+    logging.info("Starting scraper for query: %s", query)
 
-    html = fetch_page(BASE_URL, params={"q": SEARCH_QUERY})
+    html = fetch_page(TARGET_URL, params={"q": query})
     results = parse_results(html)
 
-    print_results(results, SEARCH_QUERY)
+    print_results(results, query)
     print_summary(results)
 
     if results:
@@ -38,4 +38,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    run("test")
