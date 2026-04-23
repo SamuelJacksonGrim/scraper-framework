@@ -1,34 +1,75 @@
 # config.py
-USE_PROXY = True
-PROXY_URL = "socks5h://127.0.0.1:9150"
 
-BASE_URL = "https://example-target-url.com"
-SEARCH_QUERY = "your specific search terms"
-TARGET_LINK_PREFIX = "protocol:?identifier"
+# -----------------------------
+# Target domain configuration
+# -----------------------------
+TARGET_URL = "https://example.com/search?q="
+TARGET_LINK_PREFIX = "https://example.com/"
 
+# -----------------------------
+# Selector configuration
+# -----------------------------
+# These selectors make the parser adaptable to ANY site.
+# You can override them per-site later if you want.
+SELECTORS = {
+    # CSS selector for each result item
+    "item": "a[href]",
+
+    # Attribute containing the link
+    "link_attr": "href",
+
+    # Optional: CSS selector for the title (relative to the item)
+    # None = fallback to tag text
+    "title": None,
+
+    # Optional: CSS selector for context extraction (relative to the item)
+    # None = fallback to parent element
+    "context_parent": None,
+}
+
+# -----------------------------
+# Drift detection configuration
+# -----------------------------
+DRIFT_CONFIG = {
+    # Warn if fewer than this many items are found
+    "min_items_warning": 3,
+
+    # Where to store historical DOM snapshots
+    "history_file": "dom_drift_history.json",
+
+    # How many snapshots to keep
+    "max_history": 50,
+}
+
+# -----------------------------
+# Keyword scoring configuration
+# -----------------------------
 PRIORITY_KEYWORDS = {
-    "critical": ["term1", "term2"],
-    "strong": ["alpha", "beta"],
-    "weak": ["misc", "other"]
+    "critical": ["iso", "release", "final"],
+    "strong": ["update", "patch", "installer"],
+    "weak": ["misc", "notes"],
 }
 
-EXCLUSION_LIST = ["skip1", "skip2"]
+EXCLUSION_KEYWORDS = ["beta", "old", "deprecated"]
 
-SIZE_THRESHOLD_MIN_MB = 90          # Minimum size to keep (MB)
-SIZE_THRESHOLD_BOOST_MB = 1000      # Boost threshold (MB)
-SIZE_ANOMALY_MB = 10240             # 10 GB
+# -----------------------------
+# Size detection configuration
+# -----------------------------
+SIZE_KEYWORDS = ["mb", "gb", "kb"]
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/119.0.0.0 Safari/537.36"
-    )
-}
+# -----------------------------
+# Export configuration
+# -----------------------------
+EXPORT_JSON = "results.json"
+EXPORT_CSV = "results.csv"
 
-REQUEST_TIMEOUT = 45
-MAX_RETRIES = 3
-BACKOFF_FACTOR = 2.0
+# -----------------------------
+# Proxy configuration
+# -----------------------------
+USE_TOR_PROXY = False
+TOR_PROXY = "socks5h://127.0.0.1:9050"
 
+# -----------------------------
+# Logging configuration
+# -----------------------------
 LOG_FILE = "scraper.log"
-TOP_N_SUMMARY = 5
