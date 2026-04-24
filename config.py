@@ -59,6 +59,16 @@ USE_TOR_PROXY = False
 TOR_PROXY = "socks5h://127.0.0.1:9050"
 
 # -----------------------------
+# Request / Retry configuration
+# -----------------------------
+REQUEST_TIMEOUT = 10
+MAX_RETRIES = 5
+BACKOFF_FACTOR = 1.5
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; AdaptiveScraper/1.0)"
+}
+
+# -----------------------------
 # Logging configuration
 # -----------------------------
 LOG_FILE = "scraper.log"
