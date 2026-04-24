@@ -1,21 +1,58 @@
-# scraper-framework
+# 📦 scraper-framework  
+### Adaptive, Drift‑Resistant Web Scraper Framework
 
-A modular, general-purpose web scraper framework with configurable scoring, filtering, and export pipelines. Features optional Tor proxy support, tiered keyword prioritization, confidence heuristics, anomaly detection, retry/backoff logic, and dual JSON/CSV export. Designed as a reusable scaffold — swap config values for any target.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Active-success)
+![Scraping](https://img.shields.io/badge/Scraper-Modular-orange)
+![Tor](https://img.shields.io/badge/Tor_Proxy-Optional-purple)
+
+A modular, adaptive scraping framework built for real‑world instability:
+
+- Selector‑driven parsing (swap selectors per site)
+- DOM drift detection with historical snapshots
+- Tiered keyword scoring (critical/strong/weak)
+- Size parsing + anomaly detection
+- Confidence heuristics
+- Filtering rules (keywords + size thresholds)
+- Retry/backoff networking
+- Optional Tor proxy routing
+- Colorized terminal UI
+- JSON/CSV export with timestamps
+
+Everything is configured in one file: `config.py`.
 
 ---
 
-## Structure
+## 🚀 Quickstart
 
+```bash
+git clone https://github.com/SamuelJacksonGrim/scraper-framework.git
+cd scraper-framework
+pip install -r requirements.txt
+python main.py
 ```
+
+Results appear in:
+- Terminal (with color if colorama is installed)
+- results_YYYYMMDD_HHMM.json
+- results_YYYYMMDD_HHMM.csv
+- scraper.log
+
+---
+
+## 🧩 Project Structure
+
+```text
 scraper-framework/
-├── config.py       # All configuration — swap values here for any target
-├── scoring.py      # Tiered keyword scoring, size parsing, confidence heuristics
-├── filters.py      # Exclusion logic based on keywords and size thresholds
-├── fetch.py        # HTTP requests with optional Tor proxy and retry/backoff
-├── parse.py        # HTML parsing and result assembly
-├── exporter.py     # JSON and CSV export
-├── ui.py           # Terminal output with optional color via colorama
-├── main.py         # Entry point
+├── config.py
+├── scoring.py
+├── filters.py
+├── fetch.py
+├── parse.py
+├── exporter.py
+├── ui.py
+├── main.py
 ├── requirements.txt
 ├── .gitignore
 └── LICENSE
@@ -23,87 +60,271 @@ scraper-framework/
 
 ---
 
-## Requirements
+## ⚙️ Configuration (Everything Lives in `config.py`)
 
-- Python 3.8+
-- Install dependencies:
+### Target Settings
+TARGET_URL — Base URL for the search endpoint  
+TARGET_LINK_PREFIX — Only keep links starting with this prefix  
 
-```bash
-pip install -r requirements.txt
-```
+### Selector Configuration
+item — CSS selector for each result item  
+link_attr — Attribute containing the link  
+title — Optional title selector  
+context_parent — Optional parent selector for context extraction  
 
-Contents of `requirements.txt`:
-```
-requests
-beautifulsoup4
-colorama
-```
+### Drift Detection
+min_items_warning — Warn if fewer items than expected  
+history_file — JSON file storing DOM snapshots  
+max_history — How many snapshots to keep  
+
+### Scoring & Filtering
+PRIORITY_KEYWORDS — Tiered keyword scoring  
+EXCLUSION_KEYWORDS — Keywords that disqualify a result  
+EXCLUSION_LIST — Alias used by filters.py  
+SIZE_THRESHOLD_MIN_MB — Exclude items smaller than this  
+SIZE_THRESHOLD_BOOST_MB — Boost score if size ≥ this  
+SIZE_ANOMALY_MB — Flag as anomaly if size ≥ this  
+
+### Networking
+USE_TOR_PROXY — Enable/disable Tor routing  
+TOR_PROXY — SOCKS5 proxy address  
+REQUEST_TIMEOUT — Request timeout  
+MAX_RETRIES — Retry attempts  
+BACKOFF_FACTOR — Exponential backoff multiplier  
+HEADERS — Optional request headers  
+
+### Export & Logging
+EXPORT_JSON — Default JSON filename  
+EXPORT_CSV — Default CSV filename  
+TOP_N_SUMMARY — Items shown in summary blocks  
+LOG_FILE — Log output file  
 
 ---
 
-## Configuration
+## 🧠 How Scoring Works
 
-All settings live in `config.py`. You do not need to touch any other file for basic use.
+### 1. Keyword Score
+Defined in PRIORITY_KEYWORDS:
 
-| Variable | Description |
-|---|---|
-| `USE_PROXY` | Toggle Tor proxy on/off |
-| `PROXY_URL` | Proxy address (default: Tor Browser port 9150) |
-| `BASE_URL` | Target URL to scrape |
-| `SEARCH_QUERY` | Search terms passed as query parameter |
-| `TARGET_LINK_PREFIX` | Link prefix to match (e.g. `https://`, `magnet:?xt=`) |
-| `PRIORITY_KEYWORDS` | Tiered dict of keywords that boost score (`critical`, `strong`, `weak`) |
-| `EXCLUSION_LIST` | Keywords that disqualify a result entirely |
-| `SIZE_THRESHOLD_MIN_MB` | Results below this size (MB) are excluded |
-| `SIZE_THRESHOLD_BOOST_MB` | Results above this size get a score boost |
-| `SIZE_ANOMALY_MB` | Results above this size are flagged as anomalies |
+```markdown
+{
+    "critical": ["iso", "release", "final"],
+    "strong": ["update", "patch", "installer"],
+    "weak": ["misc", "notes"]
+}
+```
+
+Weights:  
+critical = +4  
+strong = +2  
+weak = +1  
+
+### 2. Size Score
+If size_mb ≥ SIZE_THRESHOLD_BOOST_MB → +3  
+Else → +0  
+
+### 3. Anomaly Detection
+If size_mb ≥ SIZE_ANOMALY_MB → anomaly = True  
+
+### 4. Confidence
+Heuristic combining:
+- keyword density  
+- presence of size  
+- title length normalization  
+Clamped to [0, 1].
 
 ---
 
-## Usage
+## 🧭 How to Adapt This to Any Site
 
-```bash
+Modify only `config.py`.
+
+### Step 1 — Set the Target URL
+```text
+TARGET_URL = "https://somesite.com/search"
+```
+
+### Step 2 — Set the Link Prefix
+```text
+TARGET_LINK_PREFIX = "https://somesite.com/"
+```
+
+### Step 3 — Update Selectors
+```markdown
+SELECTORS = {
+    "item": ".result-item",
+    "link_attr": "href",
+    "title": ".title",
+    "context_parent": ".description"
+}
+```
+
+### Step 4 — Tune Scoring
+```markdown
+PRIORITY_KEYWORDS = {
+    "critical": ["stable", "LTS"],
+    "strong": ["update", "release"],
+    "weak": ["info", "notes"]
+}
+```
+
+### Step 5 — Adjust Size Thresholds
+```text
+SIZE_THRESHOLD_MIN_MB = 5
+SIZE_THRESHOLD_BOOST_MB = 500
+SIZE_ANOMALY_MB = 4096
+```
+
+### Step 6 — Run
+```text
 python main.py
 ```
 
-Results are printed to terminal and exported to timestamped `results_YYYYMMDDHHMM.json` and `.csv` files in the working directory. A `scraper.log` file is also written.
+---
+
+## 🧅 Tor Proxy Support
+
+Enable Tor:
+```text
+USE_TOR_PROXY = True
+TOR_PROXY = "socks5h://127.0.0.1:9050"
+```
+
+Disable:
+```text
+USE_TOR_PROXY = False
+```
+
+`socks5h://` ensures DNS resolution happens inside Tor (required for .onion domains).
 
 ---
 
-## Tor Proxy
+## 🧪 Example Output (Colorized)
 
-If `USE_PROXY = True`, requests are routed through a local SOCKS5 proxy. The default is port `9150` (Tor Browser). If you're running the Tor service directly, change to port `9050`:
-
-```python
-PROXY_URL = "socks5h://127.0.0.1:9050"
-```
-
-The `socks5h://` prefix ensures DNS resolution happens on the proxy side, which is required for `.onion` addresses.
-
-To disable the proxy entirely:
-
-```python
-USE_PROXY = False
-```
-
----
-
-## Setup from Scratch
-
-```bash
-# Clone the repo
-git clone https://github.com/SamuelJacksonGrim/scraper-framework.git
-cd scraper-framework
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Edit config.py with your target values, then run
-python main.py
+```text
+[HIGH PRIORITY] Ubuntu 22.04 LTS ISO
+    Score: 7 | Conf: 0.82 | Size: 4200 MB | Link: https://...
 ```
 
 ---
 
-## License
+## 📜 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License — see LICENSE for details.  .gitignore
+  LICENSE
+
+---
+
+## ⚙️ Configuration (Everything Lives in config.py)
+
+### Target Settings
+TARGET_URL — Base URL for the search endpoint  
+TARGET_LINK_PREFIX — Only keep links starting with this prefix  
+
+### Selector Configuration
+item — CSS selector for each result item  
+link_attr — Attribute containing the link  
+title — Optional title selector  
+context_parent — Optional parent selector for context extraction  
+
+### Drift Detection
+min_items_warning — Warn if fewer items than expected  
+history_file — JSON file storing DOM snapshots  
+max_history — How many snapshots to keep  
+
+### Scoring & Filtering
+PRIORITY_KEYWORDS — Tiered keyword scoring  
+EXCLUSION_KEYWORDS — Keywords that disqualify a result  
+EXCLUSION_LIST — Alias used by filters.py  
+SIZE_THRESHOLD_MIN_MB — Exclude items smaller than this  
+SIZE_THRESHOLD_BOOST_MB — Boost score if size ≥ this  
+SIZE_ANOMALY_MB — Flag as anomaly if size ≥ this  
+
+### Networking
+USE_TOR_PROXY — Enable/disable Tor routing  
+TOR_PROXY — SOCKS5 proxy address  
+REQUEST_TIMEOUT — Request timeout  
+MAX_RETRIES — Retry attempts  
+BACKOFF_FACTOR — Exponential backoff multiplier  
+HEADERS — Optional request headers  
+
+### Export & Logging
+EXPORT_JSON — Default JSON filename  
+EXPORT_CSV — Default CSV filename  
+TOP_N_SUMMARY — Items shown in summary blocks  
+LOG_FILE — Log output file  
+
+---
+
+## 🧠 How Scoring Works
+
+Keyword Score:
+critical = +4  
+strong = +2  
+weak = +1  
+
+Size Score:
+If size_mb ≥ SIZE_THRESHOLD_BOOST_MB → +3  
+Else → +0  
+
+Anomaly Detection:
+If size_mb ≥ SIZE_ANOMALY_MB → anomaly = True  
+
+Confidence:
+Heuristic combining keyword density, size presence, and title length.  
+Clamped to [0, 1].
+
+---
+
+## 🧭 How to Adapt This to Any Site
+
+Modify only config.py.
+
+1. Set the target URL:
+   TARGET_URL = "https://somesite.com/search"
+
+2. Set the link prefix:
+   TARGET_LINK_PREFIX = "https://somesite.com/"
+
+3. Update selectors:
+   item = ".result-item"
+   link_attr = "href"
+   title = ".title"
+   context_parent = ".description"
+
+4. Tune scoring:
+   PRIORITY_KEYWORDS = { critical: [...], strong: [...], weak: [...] }
+
+5. Adjust size thresholds:
+   SIZE_THRESHOLD_MIN_MB = 5
+   SIZE_THRESHOLD_BOOST_MB = 500
+   SIZE_ANOMALY_MB = 4096
+
+6. Run:
+   python main.py
+
+---
+
+## 🧅 Tor Proxy Support
+
+Enable Tor:
+USE_TOR_PROXY = True
+TOR_PROXY = "socks5h://127.0.0.1:9050"
+
+Disable:
+USE_TOR_PROXY = False
+
+socks5h ensures DNS resolution happens inside Tor (required for .onion domains).
+
+---
+
+## 🧪 Example Output (Colorized)
+
+[HIGH PRIORITY] Ubuntu 22.04 LTS ISO  
+Score: 7 | Conf: 0.82 | Size: 4200 MB | Link: https://...
+
+---
+
+## 📜 License
+
+MIT License — see LICENSE for details.
