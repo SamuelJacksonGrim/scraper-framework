@@ -6,9 +6,8 @@ from typing import Optional, Dict
 import requests
 
 from config import (
-    USE_PROXY,
-    PROXY_URL,
-    HEADERS,
+    USE_TOR_PROXY,
+    TOR_PROXY,
     REQUEST_TIMEOUT,
     MAX_RETRIES,
     BACKOFF_FACTOR,
@@ -19,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_proxies() -> Optional[Dict[str, str]]:
-    if not USE_PROXY:
+    if not USE_TOR_PROXY:
         return None
     return {
-        "http": PROXY_URL,
-        "https": PROXY_URL,
+        "http": TOR_PROXY,
+        "https": TOR_PROXY,
     }
 
 
@@ -43,7 +42,6 @@ def fetch_page(url: str, params: Optional[Dict] = None) -> str:
                 url,
                 params=params,
                 proxies=proxies,
-                headers=HEADERS,
                 timeout=REQUEST_TIMEOUT,
             )
             resp.raise_for_status()
