@@ -17,6 +17,18 @@ SELECTORS = {
 }
 
 # -----------------------------
+# Scoring thresholds
+# -----------------------------
+SIZE_THRESHOLD_BOOST_MB = 500      # boost score if >= this size
+SIZE_ANOMALY_MB = 4096             # mark as anomaly if >= this size
+
+# -----------------------------
+# Filtering thresholds
+# -----------------------------
+EXCLUSION_LIST = EXCLUSION_KEYWORDS
+SIZE_THRESHOLD_MIN_MB = 10         # exclude items smaller than this
+
+# -----------------------------
 # Drift detection configuration
 # -----------------------------
 DRIFT_CONFIG = {
