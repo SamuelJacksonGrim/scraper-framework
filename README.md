@@ -1,30 +1,12 @@
-# 📦 scraper-framework  
-### Adaptive, Drift‑Resistant Web Scraper Framework
+# scraper-framework
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Active-success)
-![Scraping](https://img.shields.io/badge/Scraper-Modular-orange)
-![Tor](https://img.shields.io/badge/Tor_Proxy-Optional-purple)
+A modular, adaptive web scraper framework built for real-world instability. Targets a single configurable URL, extracts and scores results by keyword relevance and file size, detects DOM drift between runs, and exports to JSON/CSV. All behavior is driven by `config.py` — no code changes required to target a new site.
 
-A modular, adaptive scraping framework built for real‑world instability:
-
-- Selector‑driven parsing (swap selectors per site)
-- DOM drift detection with historical snapshots
-- Tiered keyword scoring (critical/strong/weak)
-- Size parsing + anomaly detection
-- Confidence heuristics
-- Filtering rules (keywords + size thresholds)
-- Retry/backoff networking
-- Optional Tor proxy routing
-- Colorized terminal UI
-- JSON/CSV export with timestamps
-
-Everything is configured in one file: `config.py`.
+In the Resonance Family stack, this is the **optional external world input layer** — the top of the data flow diagram, feeding structured content events into rfe-core2 for cognitive field inference.
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 ```bash
 git clone https://github.com/SamuelJacksonGrim/scraper-framework.git
@@ -33,298 +15,211 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Results appear in:
-- Terminal (with color if colorama is installed)
-- results_YYYYMMDD_HHMM.json
-- results_YYYYMMDD_HHMM.csv
-- scraper.log
+Outputs:
+- Terminal (colorized if `colorama` is installed)
+- `results_YYYYMMDD_HHMM.json`
+- `results_YYYYMMDD_HHMM.csv`
+- `scraper.log`
 
 ---
 
-## 🧩 Project Structure
+## Architecture
 
-```text
-scraper-framework/
-├── config.py
-├── scoring.py
-├── filters.py
-├── fetch.py
-├── parse.py
-├── exporter.py
-├── ui.py
-├── main.py
-├── requirements.txt
-├── .gitignore
-└── LICENSE
+```
+config.py          All configuration (URL, selectors, keywords, thresholds, export)
+    ↓
+fetch.py           HTTP fetch with retry/backoff, optional Tor SOCKS5h proxy
+    ↓
+parse.py           BeautifulSoup DOM parsing, drift detection, per-item extraction
+    ├── scoring.py    Keyword score + size score + confidence heuristic
+    └── filters.py    Exclusion keyword filtering
+    ↓
+ui.py              Colorized terminal output, result and summary display
+exporter.py        JSON + CSV export with timestamps
 ```
 
 ---
 
-## ⚙️ Configuration (Everything Lives in `config.py`)
+## Module reference
 
-### Target Settings
-TARGET_URL — Base URL for the search endpoint  
-TARGET_LINK_PREFIX — Only keep links starting with this prefix  
+### `config.py` — single configuration source
 
-### Selector Configuration
-item — CSS selector for each result item  
-link_attr — Attribute containing the link  
-title — Optional title selector  
-context_parent — Optional parent selector for context extraction  
+| Setting | Default | Purpose |
+|---------|---------|----------|
+| `TARGET_URL` | `https://example.com/search` | Base URL for `?q=query` requests |
+| `TARGET_LINK_PREFIX` | `https://example.com/` | Only keep links starting with this |
+| `SELECTORS["item"]` | `"a[href]"` | CSS selector for result items |
+| `SELECTORS["link_attr"]` | `"href"` | Attribute on item tag containing the link |
+| `SELECTORS["title"]` | `None` | Optional CSS selector for title (falls back to tag text) |
+| `SELECTORS["context_parent"]` | `None` | Optional parent selector for context extraction |
+| `DRIFT_CONFIG["min_items_warning"]` | `3` | Warn if fewer items matched |
+| `DRIFT_CONFIG["history_file"]` | `dom_drift_history.json` | Drift snapshot storage |
+| `DRIFT_CONFIG["max_history"]` | `50` | Max snapshots to retain |
+| `PRIORITY_KEYWORDS["critical"]` | `["iso", "release", "final"]` | +4 per hit |
+| `PRIORITY_KEYWORDS["strong"]` | `["update", "patch", "installer"]` | +2 per hit |
+| `PRIORITY_KEYWORDS["weak"]` | `["misc", "notes"]` | +1 per hit |
+| `EXCLUSION_KEYWORDS` | `["beta", "old", "deprecated"]` | Discard any result matching these |
+| `SIZE_THRESHOLD_MIN_MB` | `10` | Exclude results with parsed size below this |
+| `SIZE_THRESHOLD_BOOST_MB` | `500` | +3 size score if size ≥ this |
+| `SIZE_ANOMALY_MB` | `4096` | Mark as anomaly if size ≥ this |
+| `USE_TOR_PROXY` | `False` | Route via Tor SOCKS5h |
+| `TOR_PROXY` | `socks5h://127.0.0.1:9050` | Tor proxy address |
+| `REQUEST_TIMEOUT` | `10` | HTTP timeout in seconds |
+| `MAX_RETRIES` | `5` | Retry attempts on failure |
+| `BACKOFF_FACTOR` | `1.5` | Exponential backoff multiplier |
+| `HEADERS["User-Agent"]` | `Mozilla/5.0 compatible` | Request headers |
 
-### Drift Detection
-min_items_warning — Warn if fewer items than expected  
-history_file — JSON file storing DOM snapshots  
-max_history — How many snapshots to keep  
+### `fetch.py` — HTTP with retry
 
-### Scoring & Filtering
-PRIORITY_KEYWORDS — Tiered keyword scoring  
-EXCLUSION_KEYWORDS — Keywords that disqualify a result  
-EXCLUSION_LIST — Alias used by filters.py  
-SIZE_THRESHOLD_MIN_MB — Exclude items smaller than this  
-SIZE_THRESHOLD_BOOST_MB — Boost score if size ≥ this  
-SIZE_ANOMALY_MB — Flag as anomaly if size ≥ this  
+- `fetch_page(url, params)` — sends `GET url?q=query`, returns raw HTML string
+- Retries up to `MAX_RETRIES` times with exponential backoff (`BACKOFF_FACTOR`)
+- Applies Tor SOCKS5h proxy if `USE_TOR_PROXY = True`
+- `socks5h://` ensures DNS resolution happens inside Tor (required for .onion domains)
 
-### Networking
-USE_TOR_PROXY — Enable/disable Tor routing  
-TOR_PROXY — SOCKS5 proxy address  
-REQUEST_TIMEOUT — Request timeout  
-MAX_RETRIES — Retry attempts  
-BACKOFF_FACTOR — Exponential backoff multiplier  
-HEADERS — Optional request headers  
+### `parse.py` — DOM parsing and drift detection
 
-### Export & Logging
-EXPORT_JSON — Default JSON filename  
-EXPORT_CSV — Default CSV filename  
-TOP_N_SUMMARY — Items shown in summary blocks  
-LOG_FILE — Log output file  
+`parse_results(html)` — main entry point. Returns `List[Dict]` sorted by `(score, confidence)` DESC.
 
----
+Per-item extraction:
+1. Select all items matching `SELECTORS["item"]`
+2. Extract `href` via `SELECTORS["link_attr"]`; discard if not starting with `TARGET_LINK_PREFIX`
+3. Extract title via `SELECTORS["title"]` selector (or fall back to tag text)
+4. Apply `filters.should_exclude_item(title)` — discard if any exclusion keyword matches
+5. Call `scoring.compute_total_score(title)` for keyword, size, confidence scores
+6. Extract optional context from `SELECTORS["context_parent"]` (or parent tag), max 200 chars
 
-## 🧠 How Scoring Works
+**DOM drift detection**:
+- After each run, records `{timestamp, item_count, selector}` to `dom_drift_history.json`
+- Computes ratio of current item count to rolling average of last 10 runs
+- If `ratio < 0.3`: prints `[!] DOM drift warning` (selector may have changed)
+- If `item_count < min_items_warning`: prints a separate warning
+- Drift history persists across runs; max 50 snapshots retained (FIFO)
 
-### 1. Keyword Score
-Defined in PRIORITY_KEYWORDS:
+### `scoring.py` — scoring functions
 
-```markdown
+**Size parsing**: `parse_numeric_metric(text)` — regex extracts `NNN GB/MB/KB` from title, converts all to MB.
+
+**Keyword score**: `keyword_score(title)` — case-insensitive substring match against all PRIORITY_KEYWORDS tiers:
+```
+critical match: +4 per word
+strong match:   +2 per word
+weak match:     +1 per word
+```
+
+**Size score**: `size_score(size_mb)` — `+3` if `size_mb >= SIZE_THRESHOLD_BOOST_MB`, else `0`.
+
+**Confidence**: `compute_confidence(title, size_mb)` — heuristic:
+```python
+base = keyword_score(title)
+if size_mb is not None: base += 2
+density = base / max(len(title), 10)
+confidence = clip(density * 5, 0.0, 1.0)
+```
+
+**Total score**: `total_score = keyword_score + size_score`
+
+**Anomaly flag**: `is_anomalous_size(size_mb)` — `True` if `size_mb >= SIZE_ANOMALY_MB`.
+
+### Result item data model
+
+Each item in the returned list:
+
+```python
 {
-    "critical": ["iso", "release", "final"],
-    "strong": ["update", "patch", "installer"],
-    "weak": ["misc", "notes"]
+    "title":        str,            # extracted title text
+    "link":         str,            # full URL
+    "score":        int,            # total score (keyword + size)
+    "confidence":   float,          # [0, 1] heuristic
+    "size_mb":      Optional[float],# parsed file size in MB (None if not found)
+    "keyword_score":int,            # keyword component
+    "size_score":   int,            # size component (0 or 3)
+    "anomaly":      bool,           # True if size_mb >= SIZE_ANOMALY_MB
+    "context":      str,            # up to 200 chars of surrounding text
+    "timestamp":    str,            # ISO 8601 timestamp of this run
 }
 ```
 
-Weights:  
-critical = +4  
-strong = +2  
-weak = +1  
+### `filters.py`
 
-### 2. Size Score
-If size_mb ≥ SIZE_THRESHOLD_BOOST_MB → +3  
-Else → +0  
+`should_exclude_item(title)` — returns `True` if any keyword in `EXCLUSION_LIST` appears in `title.lower()`.
 
-### 3. Anomaly Detection
-If size_mb ≥ SIZE_ANOMALY_MB → anomaly = True  
+### `ui.py`
 
-### 4. Confidence
-Heuristic combining:
-- keyword density  
-- presence of size  
-- title length normalization  
-Clamped to [0, 1].
+`print_results(results, query)` — prints each result with label (HIGH PRIORITY / RELEVANT / WEAK), score, confidence, size, and link. Uses colorama if available.
+
+`print_summary(results)` — prints top N results by score (configurable via `TOP_N_SUMMARY`).
+
+### `exporter.py`
+
+`export_json(results)` and `export_csv(results)` — write to timestamped filenames (`results_YYYYMMDD_HHMM.json/.csv`). Each result includes all fields from the data model.
 
 ---
 
-## 🧭 How to Adapt This to Any Site
+## Adapting to a new site
 
-Modify only `config.py`.
+All changes in `config.py` only:
 
-### Step 1 — Set the Target URL
-```text
-TARGET_URL = "https://somesite.com/search"
-```
-
-### Step 2 — Set the Link Prefix
-```text
-TARGET_LINK_PREFIX = "https://somesite.com/"
-```
-
-### Step 3 — Update Selectors
-```markdown
+```python
+TARGET_URL          = "https://somesite.com/search"
+TARGET_LINK_PREFIX  = "https://somesite.com/"
 SELECTORS = {
-    "item": ".result-item",
-    "link_attr": "href",
-    "title": ".title",
-    "context_parent": ".description"
+    "item":           ".result-item",
+    "link_attr":      "href",
+    "title":          ".title",
+    "context_parent": ".description",
 }
-```
-
-### Step 4 — Tune Scoring
-```markdown
 PRIORITY_KEYWORDS = {
     "critical": ["stable", "LTS"],
-    "strong": ["update", "release"],
-    "weak": ["info", "notes"]
+    "strong":   ["update", "release"],
+    "weak":     ["info", "notes"],
 }
-```
-
-### Step 5 — Adjust Size Thresholds
-```text
-SIZE_THRESHOLD_MIN_MB = 5
+SIZE_THRESHOLD_MIN_MB  = 5
 SIZE_THRESHOLD_BOOST_MB = 500
-SIZE_ANOMALY_MB = 4096
+SIZE_ANOMALY_MB         = 4096
 ```
 
-### Step 6 — Run
-```text
-python main.py
-```
+Then `python main.py`.
 
 ---
 
-## 🧅 Tor Proxy Support
+## Tor proxy
 
-Enable Tor:
-```text
+```python
 USE_TOR_PROXY = True
-TOR_PROXY = "socks5h://127.0.0.1:9050"
+TOR_PROXY = "socks5h://127.0.0.1:9050"  # default Tor Browser/service port
 ```
 
-Disable:
-```text
-USE_TOR_PROXY = False
+`socks5h://` (not `socks5://`) routes DNS through Tor, which is required for .onion addresses and for anonymizing the DNS lookup on clearnet addresses.
+
+---
+
+## Stack integration context
+
+In the Resonance Family data flow:
+
+```
+[scraper-framework]  ← you are here
+        ↓ JSON events
+[rfe-core2 :8000]    cognitive field inference
+        ↓ StepResponse
+[sovereign_manifold] relational dynamics engine
 ```
 
-`socks5h://` ensures DNS resolution happens inside Tor (required for .onion domains).
+scraper-framework provides the optional external world signal. Its scored result items can be fed into rfe-core2 as token sequences or event payloads, modulating what the cognitive field engine "thinks about" on a given cycle. The pipeline from scraper output to rfe-core2 input is not yet automated — currently manual or ad-hoc. The framework is designed to be run on a schedule (cron, Task Scheduler, etc.) with results exported for downstream ingestion.
 
 ---
 
-## 🧪 Example Output (Colorized)
+## Requirements
 
-```text
-[HIGH PRIORITY] Ubuntu 22.04 LTS ISO
-    Score: 7 | Conf: 0.82 | Size: 4200 MB | Link: https://...
+```
+beautifulsoup4
+requests
 ```
 
----
-
-## 📜 License
-
-MIT License — see LICENSE for details.  .gitignore
-  LICENSE
+Optional: `colorama` (terminal colors), `stem` (Tor control), `requests[socks]` (SOCKS proxy support).
 
 ---
 
-## ⚙️ Configuration (Everything Lives in config.py)
-
-### Target Settings
-TARGET_URL — Base URL for the search endpoint  
-TARGET_LINK_PREFIX — Only keep links starting with this prefix  
-
-### Selector Configuration
-item — CSS selector for each result item  
-link_attr — Attribute containing the link  
-title — Optional title selector  
-context_parent — Optional parent selector for context extraction  
-
-### Drift Detection
-min_items_warning — Warn if fewer items than expected  
-history_file — JSON file storing DOM snapshots  
-max_history — How many snapshots to keep  
-
-### Scoring & Filtering
-PRIORITY_KEYWORDS — Tiered keyword scoring  
-EXCLUSION_KEYWORDS — Keywords that disqualify a result  
-EXCLUSION_LIST — Alias used by filters.py  
-SIZE_THRESHOLD_MIN_MB — Exclude items smaller than this  
-SIZE_THRESHOLD_BOOST_MB — Boost score if size ≥ this  
-SIZE_ANOMALY_MB — Flag as anomaly if size ≥ this  
-
-### Networking
-USE_TOR_PROXY — Enable/disable Tor routing  
-TOR_PROXY — SOCKS5 proxy address  
-REQUEST_TIMEOUT — Request timeout  
-MAX_RETRIES — Retry attempts  
-BACKOFF_FACTOR — Exponential backoff multiplier  
-HEADERS — Optional request headers  
-
-### Export & Logging
-EXPORT_JSON — Default JSON filename  
-EXPORT_CSV — Default CSV filename  
-TOP_N_SUMMARY — Items shown in summary blocks  
-LOG_FILE — Log output file  
-
----
-
-## 🧠 How Scoring Works
-
-Keyword Score:
-critical = +4  
-strong = +2  
-weak = +1  
-
-Size Score:
-If size_mb ≥ SIZE_THRESHOLD_BOOST_MB → +3  
-Else → +0  
-
-Anomaly Detection:
-If size_mb ≥ SIZE_ANOMALY_MB → anomaly = True  
-
-Confidence:
-Heuristic combining keyword density, size presence, and title length.  
-Clamped to [0, 1].
-
----
-
-## 🧭 How to Adapt This to Any Site
-
-Modify only config.py.
-
-1. Set the target URL:
-   TARGET_URL = "https://somesite.com/search"
-
-2. Set the link prefix:
-   TARGET_LINK_PREFIX = "https://somesite.com/"
-
-3. Update selectors:
-   item = ".result-item"
-   link_attr = "href"
-   title = ".title"
-   context_parent = ".description"
-
-4. Tune scoring:
-   PRIORITY_KEYWORDS = { critical: [...], strong: [...], weak: [...] }
-
-5. Adjust size thresholds:
-   SIZE_THRESHOLD_MIN_MB = 5
-   SIZE_THRESHOLD_BOOST_MB = 500
-   SIZE_ANOMALY_MB = 4096
-
-6. Run:
-   python main.py
-
----
-
-## 🧅 Tor Proxy Support
-
-Enable Tor:
-USE_TOR_PROXY = True
-TOR_PROXY = "socks5h://127.0.0.1:9050"
-
-Disable:
-USE_TOR_PROXY = False
-
-socks5h ensures DNS resolution happens inside Tor (required for .onion domains).
-
----
-
-## 🧪 Example Output (Colorized)
-
-[HIGH PRIORITY] Ubuntu 22.04 LTS ISO  
-Score: 7 | Conf: 0.82 | Size: 4200 MB | Link: https://...
-
----
-
-## 📜 License
+## License
 
 MIT License — see LICENSE for details.
