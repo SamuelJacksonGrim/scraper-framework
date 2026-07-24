@@ -5,7 +5,7 @@ from config import EXCLUSION_LIST, SIZE_THRESHOLD_MIN_MB
 from scoring import parse_numeric_metric
 
 
-def should_exclude_item(title: str) -> bool:
+def should_exclude_item(title: str, context: str = "") -> bool:
     title_low = title.lower()
 
     # Exclusion keywords
@@ -14,6 +14,8 @@ def should_exclude_item(title: str) -> bool:
 
     # Size too small
     size_mb: Optional[float] = parse_numeric_metric(title)
+    if size_mb is None and context:
+        size_mb = parse_numeric_metric(context, loose=True)
     if size_mb is not None and size_mb < SIZE_THRESHOLD_MIN_MB:
         return True
 
