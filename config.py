@@ -25,7 +25,6 @@ SIZE_ANOMALY_MB = 4096             # mark as anomaly if >= this size
 # -----------------------------
 # Filtering thresholds
 # -----------------------------
-EXCLUSION_LIST = EXCLUSION_KEYWORDS
 SIZE_THRESHOLD_MIN_MB = 10         # exclude items smaller than this
 
 # -----------------------------
@@ -47,6 +46,7 @@ PRIORITY_KEYWORDS = {
 }
 
 EXCLUSION_KEYWORDS = ["beta", "old", "deprecated"]
+EXCLUSION_LIST = EXCLUSION_KEYWORDS  # alias kept for backwards compatibility
 
 # -----------------------------
 # Size detection configuration
