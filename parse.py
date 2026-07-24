@@ -69,7 +69,10 @@ def extract_context(tag, max_chars: int = 200) -> str:
     parent = None
 
     if parent_selector:
-        parent = tag.select_one(parent_selector)
+        # find_parent walks ancestors. The previous implementation used
+        # select_one, which searches DESCENDANTS of the link, so a configured
+        # context_parent could never match anything.
+        parent = tag.find_parent(parent_selector)
     if not parent:
         parent = tag.parent
 
@@ -125,12 +128,12 @@ def parse_results(html: str) -> List[Dict]:
             continue
 
         title = _get_title(tag)
+        context = extract_context(tag)
 
-        if should_exclude_item(title):
+        if should_exclude_item(title, context):
             continue
 
-        scoring = compute_total_score(title)
-        context = extract_context(tag)
+        scoring = compute_total_score(title, context)
 
         item = {
             "title": title,
@@ -146,5 +149,32 @@ def parse_results(html: str) -> List[Dict]:
         }
         results.append(item)
 
+    results = _deduplicate(results)
     results.sort(key=lambda x: (x["score"], x["confidence"]), reverse=True)
     return results
+
+
+def _deduplicate(results: List[Dict]) -> List[Dict]:
+    """
+    Collapse items that share a link, keeping the most informative one.
+
+    Directory listings and many search pages emit two anchors per target - one
+    wrapping an icon, one wrapping the text. The icon anchor carries no text
+    and previously surfaced as a separate "Untitled Item" result.
+    """
+    best: Dict[str, Dict] = {}
+    for item in results:
+        key = item["link"]
+        current = best.get(key)
+        if current is None:
+            best[key] = item
+            continue
+        if _title_rank(item) > _title_rank(current):
+            best[key] = item
+    return list(best.values())
+
+
+def _title_rank(item: Dict) -> tuple:
+    """Prefer a real title, then a parsed size, then a higher score."""
+    has_title = item["title"] != "Untitled Item"
+    return (has_title, item["size_mb"] is not None, item["score"])
