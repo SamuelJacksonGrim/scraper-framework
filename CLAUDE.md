@@ -1,5 +1,7 @@
 # CLAUDE.md — scraper-framework
 
+> **Cross-repo plan.** This repo's scoring is a candidate for *the* shared ranker in the Resonance memory stack (the "hippocampus"). The portable work-order — roadmap + per-repo backlog — lives at https://github.com/SamuelJacksonGrim/resonance-memory-stack.
+
 ## What this actually is
 
 This is two things at once:
