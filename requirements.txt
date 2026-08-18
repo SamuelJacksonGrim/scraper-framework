@@ -1,3 +1,13 @@
 requests
 beautifulsoup4
 colorama
+numpy
+
+# Embedding backends - one of the following is required (matched to
+# config.EMBEDDING_BACKEND). Local is the default.
+
+# local backend (default):
+sentence-transformers
+
+# cloud backend (uncomment if EMBEDDING_BACKEND="voyage"; needs VOYAGE_API_KEY):
+# voyageai

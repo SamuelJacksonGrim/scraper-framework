@@ -84,3 +84,17 @@ HEADERS = {
 # Logging configuration
 # -----------------------------
 LOG_FILE = "scraper.log"
+
+# -----------------------------
+# Embedding configuration
+#
+# Backend choices:
+#   "local"  - sentence-transformers, on-device, no API key
+#   "voyage" - Voyage AI cloud API, requires VOYAGE_API_KEY env var
+#
+# All consumers of the scoring pipeline (Leviathan, Lantern, this scraper)
+# must agree on backend AND model: cosine similarity across different vector
+# spaces is meaningless. Change here, propagate everywhere.
+# -----------------------------
+EMBEDDING_BACKEND = "local"
+EMBEDDING_MODEL   = "all-MiniLM-L6-v2"
