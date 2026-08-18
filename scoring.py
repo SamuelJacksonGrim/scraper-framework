@@ -1,12 +1,17 @@
 # scoring.py
 import re
-from typing import Optional, Dict
+from typing import Optional, Dict, TYPE_CHECKING
+
+import numpy as np
 
 from config import (
     PRIORITY_KEYWORDS,
     SIZE_THRESHOLD_BOOST_MB,
     SIZE_ANOMALY_MB,
 )
+
+if TYPE_CHECKING:
+    from embeddings import Embedder
 
 SIZE_PATTERN = re.compile(r'(\d+(?:\.\d+)?)\s*(GB|MB|KB|TB)', re.IGNORECASE)
 
@@ -88,6 +93,22 @@ def is_anomalous_size(size_mb: Optional[float]) -> bool:
     if size_mb is None:
         return False
     return size_mb >= SIZE_ANOMALY_MB
+
+
+def semantic_score(query: str, fragment: str, embedder: "Embedder") -> float:
+    """
+    Cosine similarity between query and fragment embeddings.
+
+    Range [-1, 1]. This is the semantic replacement for `keyword_score`'s
+    substring matching: when a fragment has no keyword hit but is
+    topically related to the query, this still surfaces it. Callers
+    should pass a shared `Embedder` instance from `embeddings.get_embedder()`
+    - construction of a local sentence-transformer model is slow.
+    """
+    q = embedder.embed(query)
+    f = embedder.embed(fragment)
+    denom = float(np.linalg.norm(q) * np.linalg.norm(f)) + 1e-8
+    return float(np.dot(q, f) / denom)
 
 
 def compute_total_score(title: str, context: str = "") -> Dict[str, float]:
