@@ -5,6 +5,15 @@
 [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](https://www.python.org)
 ![status](https://img.shields.io/badge/status-active-success)
 
+## License
+
+This project is dual-licensed under **AGPL-3.0-only** OR a commercial license.
+
+- [LICENSE](LICENSE) — GNU AGPL-3.0-only (the free track)
+- [LICENSING.md](LICENSING.md) — how the two tracks work
+- [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) — the commercial agreement
+- [NOTICE](NOTICE) — copyright, SPDX identifier, and provenance
+
 ### Adaptive, Drift-Resistant Web Scraper — and Proto-Hippocampus
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
@@ -426,6 +435,3 @@ standard library alone, no extra dependency.
 
 ---
 
-## License
-
-Dual-licensed: [AGPL-3.0-only](LICENSE) or a [commercial license](LICENSING.md).
