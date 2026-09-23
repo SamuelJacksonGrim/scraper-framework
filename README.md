@@ -1,8 +1,12 @@
 # scraper-framework
+
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+[![dual-license](https://img.shields.io/badge/dual--license-AGPL--3.0--only%20or%20commercial-blueviolet)](LICENSING.md)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](https://www.python.org)
+![status](https://img.shields.io/badge/status-active-success)
+
 ### Adaptive, Drift-Resistant Web Scraper — and Proto-Hippocampus
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Scraping](https://img.shields.io/badge/Scraper-Modular-orange)
 ![Tor](https://img.shields.io/badge/Tor_Proxy-Optional-purple)
@@ -424,4 +428,4 @@ standard library alone, no extra dependency.
 
 ## License
 
-MIT License — see LICENSE for details.
+Dual-licensed: [AGPL-3.0-only](LICENSE) or a [commercial license](LICENSING.md).
